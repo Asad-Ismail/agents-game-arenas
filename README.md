@@ -1,6 +1,7 @@
 # LLM and RL Game Playing Agents
 
-This repository combines LLM and RL agents to play various games.
+This repository combines LLM and RL agents to play various games. 
+This repo is currently under development and will be updated as we add more features and games.
 
 ## Diambra Engine Setup
 
@@ -8,6 +9,8 @@ We will initially focus on using the [Diambra Engine](https://docs.diambra.ai). 
 
 ### Installation Steps
 
+First we need to install Docker Desktop so we can run the Diambra Engine and games insdie the container.
+#### Install Docker Desktop
 1. Install Docker Desktop
    ```bash
    # Add Docker's official GPG key
@@ -40,5 +43,31 @@ We will initially focus on using the [Diambra Engine](https://docs.diambra.ai). 
    ```bash
    systemctl --user start docker-desktop
    ```
-
+### Install Diambra CLI and Arena
 For further setup instructions, please refer to the [Diambra documentation](https://docs.diambra.ai/#installation).
+
+Install diambra cli and arena
+
+```bash
+python3 -m pip install diambra
+python3 -m pip install diambra-arena
+```
+
+### Download games
+
+Put games roms in the `roms` directory, tekken tag for example should be in `roms/tektagt.zip` (**Important rename the file to `tektagt.zip`**) you can download it from [here](https://wowroms.com/en/roms/mame/tekken-tag-tournament-asia-clone/108661.html)
+
+### Check game
+
+```bash
+diambra arena check-roms /absolute/path/to/roms/folder/romFileName.zip
+```
+
+### Add Rom directory to bashrc
+
+```bash
+echo "export DIAMBRAROMSPATH=/absolute/path/to/roms/folder" >> ~/.bashrc
+```
+
+
+

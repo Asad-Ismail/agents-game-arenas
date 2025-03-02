@@ -1,0 +1,13 @@
+# Log files
+*.log
+
+# Text files
+*.txt
+
+# ROMs directory
+roms/
+
+# Python cache files (good practice to exclude these too)
+__pycache__/
+*.py[cod]
+*$py.class 

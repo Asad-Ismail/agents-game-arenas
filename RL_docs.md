@@ -18,4 +18,25 @@ def calculate_loss(q_network, state, action, next_state, reward, done):
     print(f'Loss: {loss:.2f}')
     return loss
 
-calculate_loss(q_network, state, action, next_state, reward, done)
+
+## Main training loop for DQL
+for episode in range(10):
+    state, info = env.reset()
+    done = False
+    step = 0
+    episode_reward = 0
+    while not done:
+        step += 1     
+        # Select the action
+        action = select_action(q_network, state)
+        next_state, reward, terminated, truncated, _ = (env.step(action))
+        done = terminated or truncated
+        # Calculate the loss
+        loss = calculate_loss(q_network, state, action, next_state, reward, done)
+        optimizer.zero_grad()
+        # Perform a gradient descent step
+        loss.backward()
+        optimizer.step()
+        state = next_state
+        episode_reward += reward
+    describe_episode(episode, reward, episode_reward, step)

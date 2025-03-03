@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 
-def get_settings():
+def get_settings(game_id):
     settings = EnvironmentSettings()
     # General settings
     settings.game_id = "tektagt"  # Game ID
@@ -50,10 +50,10 @@ def render_with_annotations(observation, rl_controlled, window_name="Tekken Tag"
     """
     try:
         # Get frame from observation
-        frame = observation["frame"].copy()  # Make a copy to avoid modifying the original
+        frame = observation["frame"].copy()[...,::-1].astype(np.uint8)  # Make a copy to avoid modifying the original
         
         # Convert RGB to BGR for OpenCV
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+        #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
         
         # Get player sides from observation
         p1_side = observation['P1']['side']
@@ -81,7 +81,7 @@ def render_with_annotations(observation, rl_controlled, window_name="Tekken Tag"
         
         # Display frame with overlays
         cv2.imshow(window_name, frame)
-        cv2.waitKey(1)
+        cv2.waitKey(2)
         return True
     except Exception as e:
         print(f"Error in custom rendering: {e}")
@@ -94,8 +94,9 @@ def main():
     rl_controlled = {"P1": True, "P2": False}  # Change as needed
     
     # Initialize settings and environment
-    settings = get_settings()
-    env = diambra.arena.make("tektagt", settings)
+    game_id="tektagt"
+    settings = get_settings(game_id)
+    env = diambra.arena.make(game_id,settings)
 
     # Environment reset
     observation, info = env.reset(seed=42)
@@ -103,8 +104,10 @@ def main():
     # Create OpenCV window if using custom rendering
     if use_custom_rendering:
         window_name = "Tekken Tag"
-        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)  # Need NORMAL for fullscreen
-        cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        #cv2.WINDOW_NORMAL
+        #cv2.WINDOW_GUI_NORMAL
+        cv2.namedWindow(window_name, cv2.WINDOW_GUI_NORMAL)  
+        #cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     # Agent-Environment interaction loop
     while True:

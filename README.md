@@ -43,6 +43,14 @@ First we need to install Docker Desktop so we can run the Diambra Engine and gam
    ```bash
    systemctl --user start docker-desktop
    ```
+
+Optional: (fix the docker permission if permission error is thrown)
+
+   ```bash
+   sudo usermod -aG docker $USER
+   newgrp docker
+   ```
+
 ### Install Diambra CLI and Arena
 For further setup instructions, please refer to the [Diambra documentation](https://docs.diambra.ai/#installation).
 
@@ -71,3 +79,13 @@ echo "export DIAMBRAROMSPATH=/absolute/path/to/roms/folder" >> ~/.bashrc
 
 
 
+### 
+
+Tekken Tag Tournament with SpaceTypes.MULTI_DISCRETE, it returns an array with two random values, Actions of Tekken tag are 
+
+[random_move, random_attack]
+
+Where:
+
+random_move is a random number from 0-8 (representing directional movements)
+random_attack is a random number from 0-12 (representing attack buttons/combinations)

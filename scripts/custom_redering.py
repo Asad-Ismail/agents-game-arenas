@@ -29,7 +29,7 @@ def get_settings(game_id):
     settings.show_final = False  # Show game finale when completed
 
     # Tekken-specific settings
-    settings.role = None  # Player role: Roles.P1, Roles.P2, or None (random)
+    settings.role = "P1"  # Player role: Roles.P1, Roles.P2, or None (random)
     settings.characters = ("Jin", "Devil")  # (character1, character2) or None for random
     settings.outfits = 1  # Character outfits (1-5 for Tekken)
 
@@ -81,7 +81,7 @@ def render_with_annotations(observation, rl_controlled, window_name="Tekken Tag"
         
         # Display frame with overlays
         cv2.imshow(window_name, frame)
-        cv2.waitKey(2)
+        cv2.waitKey(1)
         return True
     except Exception as e:
         print(f"Error in custom rendering: {e}")

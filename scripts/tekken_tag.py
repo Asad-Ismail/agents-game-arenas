@@ -49,6 +49,71 @@ def get_settings():
 
     return settings
 
+
+
+def basic_fighting_strategy(observation, player="P1"):
+    """
+    A simple fighting strategy that decides between blocking and attacking
+    based on opponent position.
+    
+    Args:
+        observation: Current game observation
+        player: Which player this strategy controls ("P1" or "P2")
+    
+    Returns:
+        list: [move_action, attack_action] to perform
+    """
+    # Determine opponent label
+    opponent = "P2" if player == "P1" else "P1"
+    
+    # Get player and opponent sides
+    player_side = observation[player]['side']  # 0 = left, 1 = right
+    opponent_side = observation[opponent]['side']  # 0 = left, 1 = right
+    
+    # Get health values to determine if we should be aggressive or defensive
+    player_health = observation[player]['health_1']  # Using active character's health
+    opponent_health = observation[opponent]['health_1']
+    
+    # Move actions reference:
+    # 0 = NoMove, 1 = Left, 2 = UpLeft, 3 = Up, 4 = UpRight
+    # 5 = Right, 6 = DownRight, 7 = Down, 8 = DownLeft
+    
+    # Attack actions reference:
+    # 0 = No attack, 1-4 = single buttons, 5+ = combinations
+    
+    # Distance-based strategy (based on sides):
+    if player_side == opponent_side:
+        # Same side - they're close, either block or attack
+        
+        # Defensive logic when health is low
+        if player_health < opponent_health * 0.7:  
+            # Block by moving away from opponent
+            if player_side == 0:  # Player on left
+                move_action = 5  # Move right (away)
+            else:  # Player on right
+                move_action = 1  # Move left (away)
+            attack_action = 0  # No attack while blocking
+            
+        # Offensive logic when health is higher or similar
+        else:
+            # Basic attack pattern
+            if player_side == 0:  # Player on left
+                move_action = 5  # Move right (toward opponent)
+            else:  # Player on right
+                move_action = 1  # Move left (toward opponent)
+    else:
+        # Different sides - need to approach opponent
+        if player_side == 0:  # Player on left, opponent on right
+            move_action = 5  # Move right (toward opponent)
+        else:  # Player on right, opponent on left
+            move_action = 1  # Move left (toward opponent)
+        
+        # No attack while approaching from distance
+        attack_action = 0
+    
+    return [move_action, attack_action]
+
+
 def main():
 
     settings = get_settings()
@@ -64,6 +129,8 @@ def main():
 
         # Action random sampling
         actions = env.action_space.sample()
+        print(f"Length of actions are")
+        print(len(actions))
 
         # Environment stepping
         observation, reward, terminated, truncated, info = env.step(actions)

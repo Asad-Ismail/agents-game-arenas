@@ -29,7 +29,7 @@ def get_settings(game_id):
     settings.show_final = False  # Show game finale when completed
 
     # Tekken-specific settings
-    settings.role = "P1"  # Player role: Roles.P1, Roles.P2, or None (random)
+    settings.role = Roles.P1  # Player role: Roles.P1, Roles.P2, or None (random)
     settings.characters = ("Jin", "Devil")  # (character1, character2) or None for random
     settings.outfits = 1  # Character outfits (1-5 for Tekken)
 
@@ -68,9 +68,9 @@ def render_with_annotations(observation, rl_controlled, window_name="Tekken Tag"
         font_color = (0, 0, 255)
         font_thickness = 2
         
-        # Calculate positions for "RL" text based on player sides
-        p1_pos = (int(width * 0.25), int(height * 0.22)) if p1_side == 1 else (int(width * 0.75), int(height * 0.22))
-        p2_pos = (int(width * 0.25), int(height * 0.22)) if p2_side == 1 else (int(width * 0.75), int(height * 0.22))
+        # Calculate positions for "RL" text based on player sides, 0 left, 1 Right
+        p1_pos = (int(width * 0.25), int(height * 0.22)) if p1_side == 0 else (int(width * 0.75), int(height * 0.22))
+        p2_pos = (int(width * 0.25), int(height * 0.22)) if p2_side == 0 else (int(width * 0.75), int(height * 0.22))
         
         # Place "RL" text based on which player is RL-controlled
         if rl_controlled["P1"]:
@@ -111,12 +111,6 @@ def main():
 
     # Agent-Environment interaction loop
     while True:
-        # Rendering
-        if use_custom_rendering:
-            render_success = render_with_annotations(observation, rl_controlled, window_name)
-        else:
-            # Use default rendering
-            env.render()
         
         # Action random sampling
         actions = env.action_space.sample()
@@ -125,6 +119,14 @@ def main():
         observation, reward, terminated, truncated, info = env.step(actions)
         #print(f"P1 health: {observation['P1']['health_1']},{observation['P1']['health_2']}, P2 health: {observation['P2']['health_1']},{observation['P2']['health_2']}")
         
+
+        # Rendering
+        if use_custom_rendering:
+            render_success = render_with_annotations(observation, rl_controlled, window_name)
+        else:
+            # Use default rendering
+            env.render()
+
         # Episode end (Done condition) check
         if terminated or truncated:
             observation, info = env.reset()

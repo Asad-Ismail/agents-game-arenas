@@ -26,7 +26,7 @@ def get_settings():
 
     # Episode settings
     settings.seed = None  # Random seed (None for automatic)
-    settings.difficulty = None  # Game difficulty (1-9, None for random)
+    settings.difficulty = 3  # Game difficulty (1-9, None for random)
     # For Tekken: 1-5 (Easy), 6-7 (Medium), 8-9 (Hard)
     settings.continue_game = 0.0  # Continue game logic:
     # - [0.0, 1.0]: probability of continuing after game over

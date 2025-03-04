@@ -77,15 +77,48 @@ diambra arena check-roms /absolute/path/to/roms/folder/romFileName.zip
 echo "export DIAMBRAROMSPATH=/absolute/path/to/roms/folder" >> ~/.bashrc
 ```
 
+## Game Controls: Tekken Tag Tournament
 
+Tekken Tag Tournament uses a `MULTI_DISCRETE` action space which takes an array of two values:
 
-### 
+```
+[movement_action, attack_action]
+```
 
-Tekken Tag Tournament with SpaceTypes.MULTI_DISCRETE, it returns an array with two random values, Actions of Tekken tag are 
+### Movement Actions (0-8)
 
-[random_move, random_attack]
+| Code | Action    | Description             |
+|------|-----------|-------------------------|
+| 0    | NoMove    | Neutral stance/position |
+| 1    | Left      | Move left               |
+| 2    | UpLeft    | Move diagonally up-left |
+| 3    | Up        | Move up/jump            |
+| 4    | UpRight   | Move diagonally up-right|
+| 5    | Right     | Move right              |
+| 6    | DownRight | Move diagonally down-right |
+| 7    | Down      | Move down/crouch        |
+| 8    | DownLeft  | Move diagonally down-left |
 
-Where:
+### Attack Actions (0-12)
 
-random_move is a random number from 0-8 (representing directional movements)
-random_attack is a random number from 0-12 (representing attack buttons/combinations)
+| Code | Action Type        | Description                   |
+|------|-------------------|-------------------------------|
+| 0    | No Attack         | No button pressed             |
+| 1    | Left Punch (LP)   | Single button - light punch   |
+| 2    | Right Punch (RP)  | Single button - heavy punch   |
+| 3    | Left Kick (LK)    | Single button - light kick    |
+| 4    | Right Kick (RK)   | Single button - heavy kick    |
+| 5-12 | Button Combinations | Various combined button presses |
+
+### Examples
+
+```python
+# Stand still (no movement) and do nothing
+action = [0, 0]
+
+# Move right while performing a left punch
+action = [5, 1]
+
+# Jump and execute a button combination
+action = [3, 6]
+```

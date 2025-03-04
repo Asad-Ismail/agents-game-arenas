@@ -6,10 +6,18 @@ import cv2
 import numpy as np
 
 
+FONT = cv2.FONT_HERSHEY_SIMPLEX
+FONT_SCALE = 0.5
+FONT_COLOR = (0, 0, 255)
+FONT_THICKNESS = 2
+WINDOW_NAME = "Tekken Tag"
+GAME_ID = "tektagt"
+
+
 def get_settings(game_id):
     settings = EnvironmentSettings()
     # General settings
-    settings.game_id = "tektagt"  # Game ID
+    settings.game_id = GAME_ID  # Game ID
     settings.step_ratio = 1  # Game speed (1-6, where 1 is slowest, 6 is fastest)
     settings.disable_keyboard = True  # Disable keyboard input
     settings.disable_joystick = True  # Disable joystick input
@@ -36,7 +44,7 @@ def get_settings(game_id):
     return settings
 
 
-def render_with_annotations(observation, rl_controlled, window_name="Tekken Tag"):
+def render_with_annotations(observation, rl_controlled):
     """
     Render the game frame with RL indicators overlaid on characters
     
@@ -50,37 +58,27 @@ def render_with_annotations(observation, rl_controlled, window_name="Tekken Tag"
     """
     try:
         # Get frame from observation
-        frame = observation["frame"].copy()[...,::-1].astype(np.uint8)  # Make a copy to avoid modifying the original
-        
-        # Convert RGB to BGR for OpenCV
-        #frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-        
+        frame = observation["frame"].copy()[...,::-1].astype(np.uint8)  
         # Get player sides from observation
         p1_side = observation['P1']['side']
         p2_side = observation['P2']['side']
         
         # Frame shape
-        height, width = frame.shape[:2]
-        
-        # Set up text parameters for OpenCV
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        font_scale = 0.5 
-        font_color = (0, 0, 255)
-        font_thickness = 2
+        height, width = frame.shape[:2]     
+        print(f"Frame shape is {height}, {width}")
         
         # Calculate positions for "RL" text based on player sides, 0 left, 1 Right
         p1_pos = (int(width * 0.25), int(height * 0.22)) if p1_side == 0 else (int(width * 0.75), int(height * 0.22))
         p2_pos = (int(width * 0.25), int(height * 0.22)) if p2_side == 0 else (int(width * 0.75), int(height * 0.22))
         
-        # Place "RL" text based on which player is RL-controlled
         if rl_controlled["P1"]:
-            cv2.putText(frame, "RL", p1_pos, font, font_scale, font_color, font_thickness)
+            cv2.putText(frame, "RL", p1_pos, FONT, FONT_SCALE, FONT_COLOR, FONT_THICKNESS)
         
         if rl_controlled["P2"]:
-            cv2.putText(frame, "RL", p2_pos, font, font_scale, font_color, font_thickness)
+            cv2.putText(frame, "RL", p2_pos, FONT, FONT_SCALE, FONT_COLOR, FONT_THICKNESS)
         
         # Display frame with overlays
-        cv2.imshow(window_name, frame)
+        cv2.imshow(WINDOW_NAME, frame)
         cv2.waitKey(1)
         return True
     except Exception as e:
@@ -94,19 +92,17 @@ def main():
     rl_controlled = {"P1": True, "P2": False}  # Change as needed
     
     # Initialize settings and environment
-    game_id="tektagt"
-    settings = get_settings(game_id)
-    env = diambra.arena.make(game_id,settings)
+    settings = get_settings(GAME_ID)
+    env = diambra.arena.make(GAME_ID,settings)
 
     # Environment reset
     observation, info = env.reset(seed=42)
     
     # Create OpenCV window if using custom rendering
     if use_custom_rendering:
-        window_name = "Tekken Tag"
         #cv2.WINDOW_NORMAL
         #cv2.WINDOW_GUI_NORMAL
-        cv2.namedWindow(window_name, cv2.WINDOW_GUI_NORMAL)  
+        cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_GUI_NORMAL)  
         #cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     # Agent-Environment interaction loop
@@ -122,7 +118,7 @@ def main():
 
         # Rendering
         if use_custom_rendering:
-            render_success = render_with_annotations(observation, rl_controlled, window_name)
+            render_success = render_with_annotations(observation, rl_controlled)
         else:
             # Use default rendering
             env.render()

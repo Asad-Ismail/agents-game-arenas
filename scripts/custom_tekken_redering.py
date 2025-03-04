@@ -4,6 +4,7 @@ from diambra.arena import EnvironmentSettings
 from diambra.arena import SpaceTypes, Roles
 import cv2
 import numpy as np
+from fight_stratigies import *
 
 
 FONT = cv2.FONT_HERSHEY_SIMPLEX
@@ -109,7 +110,10 @@ def main():
     while True:
         
         # Action random sampling
-        actions = env.action_space.sample()
+        #actions = env.action_space.sample()
+        actions = basic_fighting_strategy(observation,"P1")
+
+        #print(f"Actions are {actions}")
 
         # Environment stepping
         observation, reward, terminated, truncated, info = env.step(actions)

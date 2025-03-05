@@ -77,6 +77,32 @@ diambra arena check-roms /absolute/path/to/roms/folder/romFileName.zip
 echo "export DIAMBRAROMSPATH=/absolute/path/to/roms/folder" >> ~/.bashrc
 ```
 
+
+## Running the Script
+
+You can run the script in one of two ways:
+
+### Option 1
+
+You can runt the game easily using 
+
+```bash
+cd scripts
+diambra run -r python custom_tekken_redering.py
+```
+
+### Option 2 for debugging/more fine grain control
+
+```bash
+#Run diambra arean docker
+docker run -d --rm --name engine   -v $HOME/.diambra/credentials:/tmp/.diambra/credentials   -v /home/asad/dev/agents-game-arenas/roms:/opt/diambraArena/roms   -p 127.0.0.1:50051:50051 docker.io/diambra/engine:latest
+
+#Run the script
+
+DIAMBRA_ENVS=localhost:50051 python ./custom_tekken_redering.py
+```
+
+
 ## Game Controls: Tekken Tag Tournament
 
 Tekken Tag Tournament uses a `MULTI_DISCRETE` action space which takes an array of two values:

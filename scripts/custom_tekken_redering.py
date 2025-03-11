@@ -101,10 +101,7 @@ def main():
     
     # Create OpenCV window if using custom rendering
     if use_custom_rendering:
-        #cv2.WINDOW_NORMAL
-        #cv2.WINDOW_GUI_NORMAL
         cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_GUI_NORMAL)  
-        #cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     # Agent-Environment interaction loop
     while True:
@@ -117,6 +114,7 @@ def main():
 
         # Environment stepping
         observation, reward, terminated, truncated, info = env.step(actions)
+        print(observation.keys())
         #print(f"P1 health: {observation['P1']['health_1']},{observation['P1']['health_2']}, P2 health: {observation['P2']['health_1']},{observation['P2']['health_2']}")
         
 

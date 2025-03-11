@@ -41,7 +41,8 @@ def main():
     wrappers_settings.exclude_image_scaling = True
     wrappers_settings.role_relative = True
     wrappers_settings.flatten = True
-    wrappers_settings.filter_keys = ["frame", "action", "P1", "P2"]
+    #wrappers_settings.filter_keys = ["frame", "action", "P1", "P2"]
+    wrappers_settings.filter_keys = ["frame", "action", "P1", "P2", "stage", "timer"]
 
     # Create environment
     env, num_envs = make_sb3_env(GAME_ID, settings, wrappers_settings)

@@ -11,3 +11,6 @@ roms/
 __pycache__/
 *.py[cod]
 *$py.class 
+
+.vscode/*
+__pycache__/*

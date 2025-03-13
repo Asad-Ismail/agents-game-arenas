@@ -23,7 +23,7 @@ def main():
 
     # Get environment settings
     settings = get_settings(GAME_ID)
-    settings.frame_shape = (128, 128, 3)  # Match training frame shape
+    settings.frame_shape = (128, 128, 1)  # Match training frame shape
     settings.render_mode = "rgb_array"
 
     # Wrappers Settings - should match training settings

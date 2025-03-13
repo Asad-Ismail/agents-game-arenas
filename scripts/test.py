@@ -2,23 +2,22 @@
 import os
 import time
 import argparse
+from diambra.arena import EnvironmentSettings
 from diambra.arena.stable_baselines3.make_sb3_env import make_sb3_env, WrappersSettings
 from stable_baselines3 import PPO
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.callbacks import CheckpointCallback
 from custom_tekken_redering import render_with_annotations, GAME_ID, get_settings
 from diambra.arena import make as diambra_make
-from utils import RGBToGrayscaleWrapper, env_wrapping,DummyVecEnv, Monitor
 
 
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--total_timesteps", type=int, default=500000, help="Total timesteps for training")
+    parser.add_argument("--total_timesteps", type=int, default=5000000, help="Total timesteps for training")
     parser.add_argument("--eval_episodes", type=int, default=3, help="Number of episodes for evaluation")
     parser.add_argument("--checkpoint_freq", type=int, default=10000, help="Frequency of checkpoints")
-    parser.add_argument("--custom_wrapping", type=bool, default=True, help="True if you want train on gray scale and want rgb visualizations false if the model was trained on rgb")
-    parser.add_argument("--load_model", type=str, default="/home/asad/dev/agents-game-arenas/scripts/results/tektagt/model/tekken_ppo_final", help="Path to load a pre-trained model")
+    parser.add_argument("--load_model", type=str, default=None, help="Path to load a pre-trained model")
     args = parser.parse_args()
 
     # Create results directories
@@ -47,21 +46,9 @@ def main():
                                     'opp_wins', 'own_active_character', 'own_bar_status', 'own_character', 'own_character_1',
                                     'own_character_2', 'own_health_1', 'own_health_2', 'own_side', 'own_wins', 'stage', 'timer']
 
-    # Create environments
-    if args.custom_wrapper:
-        env_base = diambra_make(GAME_ID, settings, render_mode="rgb_array")
-        # Apply our custom wrapper to convert RGB to grayscale
-        env_base = RGBToGrayscaleWrapper(env_base)
-        env_wrapped = env_wrapping(env_base, wrappers_settings)
-        # Add monitoring
-        env_monitor = Monitor(env_wrapped, log_dir)
-        # Create vectorized environment
-        env = DummyVecEnv([lambda: env_monitor])
-        num_envs = 1
-    else:
-        env, num_envs = make_sb3_env(GAME_ID, settings, wrappers_settings)
+    num_envs = 1
 
-    #env, num_envs = make_sb3_env(GAME_ID, settings, wrappers_settings)
+    env, num_envs = make_sb3_env(GAME_ID, settings, wrappers_settings)
     print(f"Activated {num_envs} environment(s)")
 
     # Define policy kwargs - network architecture
@@ -104,10 +91,10 @@ def main():
     # Train the agent
     print(f"\nStarting training for {args.total_timesteps} timesteps...\n")
     start_time = time.time()
-    #model.learn(
-    #    total_timesteps=args.total_timesteps,
-    #    callback=checkpoint_callback
-    #)
+    model.learn(
+        total_timesteps=args.total_timesteps,
+        callback=checkpoint_callback
+    )
     training_time = time.time() - start_time
     print(f"\nTraining completed in {training_time/60:.2f} minutes")
 
@@ -150,10 +137,9 @@ def main():
         # Get RGB frame from visualization environment
         rgb_frame = env.render(mode="rgb_array")
         print(f"RGB frame shape: {rgb_frame.shape}")  # Should be (128, 128, 3)
-        vis_data = observation.copy()
-        vis_data['rgb_frame'] = rgb_frame 
+        observation['rgb_frame'] = rgb_frame
         # Pass RGB observation to your rendering function
-        render_with_annotations(vis_data, rl_controlled)
+        render_with_annotations(observation, rl_controlled)
     
     env.close()
     print(f"Done with cummulative reward {cumulative_reward }!")

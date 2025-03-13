@@ -59,10 +59,19 @@ def render_with_annotations(observation, rl_controlled):
     """
     try:
         # Get frame from observation
-        frame = observation["frame"].copy()[...,::-1].astype(np.uint8)  
+        if 'rgb_frame' in observation:
+            frame=observation['rgb_frame'].copy()[...,::-1].astype(np.uint8)  
+        else:
+            frame = observation["frame"].copy()[...,::-1].astype(np.uint8)  
         # Get player sides from observation
-        p1_side = observation['P1']['side']
-        p2_side = observation['P2']['side']
+        if 'own_side' in observation:
+            p1_side= int(observation['own_side'])
+        else:
+            p1_side = observation['P1']['side']
+        if 'opp_side' in observation:
+            p2_side= int(observation['opp_side'])
+        else:
+            p2_side = observation['P2']['side']
         
         # Frame shape
         height, width = frame.shape[:2]     

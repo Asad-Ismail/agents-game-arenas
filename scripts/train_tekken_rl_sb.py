@@ -49,6 +49,7 @@ def main():
 
     # Create environments
     if args.custom_wrapper:
+        print(f"Creating custom env!")
         env_base = diambra_make(GAME_ID, settings, render_mode="rgb_array")
         # Apply our custom wrapper to convert RGB to grayscale
         env_base = RGBToGrayscaleWrapper(env_base)
@@ -59,6 +60,7 @@ def main():
         env = DummyVecEnv([lambda: env_monitor])
         num_envs = 1
     else:
+        print(f"Creating default env from sb3!")
         env, num_envs = make_sb3_env(GAME_ID, settings, wrappers_settings)
 
     #env, num_envs = make_sb3_env(GAME_ID, settings, wrappers_settings)
@@ -104,27 +106,27 @@ def main():
     # Train the agent
     print(f"\nStarting training for {args.total_timesteps} timesteps...\n")
     start_time = time.time()
-    #model.learn(
-    #    total_timesteps=args.total_timesteps,
-    #    callback=checkpoint_callback
-    #)
+    model.learn(
+        total_timesteps=args.total_timesteps,
+        callback=checkpoint_callback
+    )
     training_time = time.time() - start_time
     print(f"\nTraining completed in {training_time/60:.2f} minutes")
 
     # Save the final model
     final_model_path = os.path.join(model_dir, "tekken_ppo_final")
-    #model.save(final_model_path)
-    #print(f"Final model saved to {final_model_path}")
+    model.save(final_model_path)
+    print(f"Final model saved to {final_model_path}")
 
     # Evaluate the trained agent
     print("\nEvaluating the trained agent it might take a while please wait...")
-    #mean_reward, std_reward = evaluate_policy(
-    #    model, 
-    #    env, 
-    #    n_eval_episodes=args.eval_episodes,
-    #    deterministic=True
-    #)
-    #print(f"Mean reward: {mean_reward:.2f} ± {std_reward:.2f}")
+    mean_reward, std_reward = evaluate_policy(
+        model, 
+        env, 
+        n_eval_episodes=args.eval_episodes,
+        deterministic=True
+    )
+    print(f"Mean reward: {mean_reward:.2f} ± {std_reward:.2f}")
 
     # Run the trained agent with custom rendering
     print("\nRunning trained agent with custom rendering...")
@@ -149,7 +151,7 @@ def main():
         
         # Get RGB frame from visualization environment
         rgb_frame = env.render(mode="rgb_array")
-        print(f"RGB frame shape: {rgb_frame.shape}")  # Should be (128, 128, 3)
+        #print(f"RGB frame shape: {rgb_frame.shape}")  # Should be (128, 128, 3)
         vis_data = observation.copy()
         vis_data['rgb_frame'] = rgb_frame 
         # Pass RGB observation to your rendering function

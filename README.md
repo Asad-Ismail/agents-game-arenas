@@ -148,3 +148,12 @@ action = [5, 1]
 # Jump and execute a button combination
 action = [3, 6]
 ```
+
+
+### Install OLLAMA to run LLM locally
+
+```python
+curl -fsSL https://ollama.com/install.sh | sh
+## Pull required model
+ollama pull llava
+```

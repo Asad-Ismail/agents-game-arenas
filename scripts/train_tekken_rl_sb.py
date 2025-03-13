@@ -17,8 +17,8 @@ def main():
     parser.add_argument("--total_timesteps", type=int, default=500000, help="Total timesteps for training")
     parser.add_argument("--eval_episodes", type=int, default=3, help="Number of episodes for evaluation")
     parser.add_argument("--checkpoint_freq", type=int, default=10000, help="Frequency of checkpoints")
-    parser.add_argument("--custom_wrapping", type=bool, default=True, help="True if you want train on gray scale and want rgb visualizations false if the model was trained on rgb")
-    parser.add_argument("--load_model", type=str, default="/home/asad/dev/agents-game-arenas/scripts/results/tektagt/model/tekken_ppo_final", help="Path to load a pre-trained model")
+    parser.add_argument("--custom_wrapper", type=bool, default=False, help="True if you want train on gray scale and want rgb visualizations false if the model was trained on rgb")
+    parser.add_argument("--load_model", type=str, default=None, help="Path to load a pre-trained model")
     args = parser.parse_args()
 
     # Create results directories

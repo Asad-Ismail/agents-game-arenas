@@ -75,7 +75,7 @@ def render_with_annotations(observation, rl_controlled):
         
         # Frame shape
         height, width = frame.shape[:2]     
-        print(f"Frame shape is {height}, {width}")
+        #print(f"Frame shape is {height}, {width}")
         
         # Calculate positions for "RL" text based on player sides, 0 left, 1 Right
         p1_pos = (int(width * 0.25), int(height * 0.22)) if p1_side == 0 else (int(width * 0.75), int(height * 0.22))

@@ -6,6 +6,10 @@ from PIL import Image
 import numpy as np
 import json
 import re
+from tqdm import tqdm
+import time
+import statistics
+
 
 # Define valid moves & attacks there can be special combos attacks which might not be listed below
 MOVES = ["No-Move", "Left", "Left+Up", "Up", "Up+Right", "Right", "Right+Down", "Down", "Down+Left"]
@@ -44,7 +48,7 @@ each round.
 ## CHARACTER DETAILS:
 - own_character_1/opp_character_1: First character in the tag team
 - own_character_2/opp_character_2: Second character in the tag team
-- own_character/opp_character: Currently active character
+- own_character/opp_character: Currently active character Name
 
 ## HEALTH SYSTEM:
 - own_health_1/opp_health_1: Health of first character (range: 0.0-1.0), where 0.0 means defeated and 1.0 is full health
@@ -87,6 +91,114 @@ The reasoning should be short (max 20 words).
 """
 
 
+
+def decode_character(one_hot_vector):
+    if isinstance(one_hot_vector, np.ndarray) and len(one_hot_vector) <= len(CHARACTERS):
+        try:
+            index = np.argmax(one_hot_vector)
+            return CHARACTERS[index]
+        except:
+            return "Unknown"
+    return "Unknown"
+
+# Helper function to safely get values from Box spaces
+def get_box_value(box_value):
+    if isinstance(box_value, np.ndarray) and box_value.size > 0:
+        return float(box_value[0])
+    return 0.0
+
+# Helper function to get value from Discrete space
+def get_discrete_value(discrete_value):
+    if isinstance(discrete_value, (int, np.ndarray, np.integer)):
+        return int(discrete_value)
+    return 0
+
+# User prompt with the current game state information
+# Get bar status explanation
+def get_bar_status_explanation(bar_status_array):
+    bar_status_array = bar_status_array.squeeze(0)
+    bar_idx = np.argmax(bar_status_array)
+    return bar_idx
+
+def decoder_observations(observation, include_image=False):
+
+    # Extract frame if available and include_image is True
+    image_data = None
+    if include_image and 'rgb_frame' in observation:
+        image_data = encode_image(observation['rgb_frame'])
+    
+
+    own_char_1 = decode_character(observation.get('own_character_1', np.zeros(39)))
+    own_char_2 = decode_character(observation.get('own_character_2', np.zeros(39)))
+    
+    opp_char_1 = decode_character(observation.get('opp_character_1', np.zeros(39)))
+    opp_char_2 = decode_character(observation.get('opp_character_2', np.zeros(39)))
+    
+    own_health_1 = get_box_value(observation.get('own_health_1', np.array([0.0])))
+    own_health_2 = get_box_value(observation.get('own_health_2', np.array([0.0])))
+    opp_health_1 = get_box_value(observation.get('opp_health_1', np.array([0.0])))
+    opp_health_2 = get_box_value(observation.get('opp_health_2', np.array([0.0])))
+    
+    own_side = get_discrete_value(observation.get('own_side', 0))
+    opp_side = get_discrete_value(observation.get('opp_side', 0))
+    opp_side 
+    
+    timer = get_box_value(observation.get('timer', np.array([0.0])))
+    stage = get_box_value(observation.get('stage', np.array([0.0])))
+    
+    own_wins = get_box_value(observation.get('own_wins', np.array([0.0])))
+    opp_wins = get_box_value(observation.get('opp_wins', np.array([0.0])))
+    
+    # Get active character (0 or 1)
+    own_active = get_discrete_value(observation.get('own_active_character', 0))
+    opp_active = get_discrete_value(observation.get('opp_active_character', 0))
+
+    # Get character name
+    own_char = decode_character(observation.get('own_character', np.zeros(39)))
+    opp_char = decode_character(observation.get('opp_character', np.zeros(39)))
+    
+    # Format positions as string
+    own_position = "Left" if own_side == 0 else "Right"
+    opp_position = "Left" if opp_side == 0 else "Right"
+    
+    # Format active character information more clearly
+    own_active_char = own_char_1 if own_active == 0 else own_char_2
+    opp_active_char = opp_char_1 if opp_active == 0 else opp_char_2
+    
+    # Keep normalized values for consistency with the system prompt description
+    own_health_1_pct = f"{own_health_1:.2f}"
+    own_health_2_pct = f"{own_health_2:.2f}"
+    opp_health_1_pct = f"{opp_health_1:.2f}"
+    opp_health_2_pct = f"{opp_health_2:.2f}"
+    
+    own_bar_status_exp = get_bar_status_explanation(observation.get('own_bar_status', np.zeros(5)))
+    opp_bar_status_exp = get_bar_status_explanation(observation.get('opp_bar_status', np.zeros(5)))
+
+    user_prompt = f"""## CURRENT GAME STATE:
+    - Stage: {stage:.2f} (normalized)
+    - Time Left: {timer:.2f} (normalized)
+    - Your Wins: {own_wins:.2f} (normalized)
+    - Opponent Wins: {opp_wins:.2f} (normalized)
+    - Your Characters: {own_char_1} and {own_char_2}
+    - Your Active Character: {own_active_char}
+    - Your Active Character Name: {own_char}
+    - Your Health (Active): {own_health_1_pct} (normalized)
+    - Your Health (Reserve): {own_health_2_pct} (normalized)
+    - Your Bar Status: {own_bar_status_exp}
+    - Opponent Characters: {opp_char_1} and {opp_char_2}
+    - Opponent Active Character: {opp_active_char}
+    - Opponent Active Character Name: {opp_char}
+    - Opponent Health (Active): {opp_health_1_pct} (normalized)
+    - Opponent Health (Reserve): {opp_health_2_pct} (normalized)
+    - Opponent Bar Status: {opp_bar_status_exp}
+    - Your Position: {own_position}
+    - Opponent Position: {opp_position}
+
+    Based on this game state and the image, what is your next move and attack?"""
+
+    return user_prompt, image_data
+
+
 def encode_image(image_array):
     """Convert numpy array to base64 encoded string"""
     if image_array is None:
@@ -96,36 +208,6 @@ def encode_image(image_array):
     buffer = io.BytesIO()
     img.save(buffer, format="PNG")
     return base64.b64encode(buffer.getvalue()).decode('utf-8')
-
-
-def format_game_state(observation, include_image=False):
-    """
-    Convert DIAMBRA game state into a structured prompt for VLMs.
-    Separates system prompt (constant) from user prompt (game state).
-    """
-    # Extract frame if available and include_image is True
-    image_data = None
-    if include_image and 'rgb_frame' in observation:
-        image_data = encode_image(observation['rgb_frame'])
-    
-
-    # User prompt - just the current game state information
-    user_prompt = f"""## CURRENT GAME STATE:
-    - Stage: {observation.get('stage', 'Unknown')}
-    - Time Left: {observation.get('timer', 'Unknown')}
-    - Your Wins: {observation.get('own_wins', observation.get('wins', 'Unknown'))}
-    - Opponent Wins: {observation.get('opp_wins', 'Unknown')}
-    - Your Character: {observation.get('own_character', observation.get('character', 'Unknown'))}
-    - Your Health (Active): {observation.get('own_health_1', observation.get('health_1', 'Unknown'))}
-    - Your Health (Reserve): {observation.get('own_health_2', observation.get('health_2', 'Unknown'))}
-    - Opponent Character: {observation.get('opp_character', 'Unknown')}
-    - Opponent Health: {observation.get('opp_health_1', 'Unknown')}
-    - Your Position: {observation.get('own_side', 'Unknown')}
-    - Opponent Position: {observation.get('opp_side', 'Unknown')}
-
-    Based on this game state and the image, what is your next move and attack?"""
-
-    return  user_prompt.strip(), image_data
 
 
 def find_closest_match(text, options):
@@ -206,7 +288,7 @@ def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0
     """
     global system_prompt
     system_prompt = system_prompt.strip()
-    user_prompt, image_data = format_game_state(observation)
+    user_prompt, image_data = decoder_observations(observation)
     
     try:
         options = {
@@ -235,7 +317,7 @@ def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0
         # Extract the content from the response
         if 'message' in response and 'content' in response['message']:
             action_text = response['message']['content']
-            print(f"LLM response is {action_text}")
+            #print(f"LLM response is {action_text}")
         else:
             print("Warning: Unexpected response format from Ollama")
             return random.choice(MOVES), random.choice(ATTACKS), "Random fallback (API error)"
@@ -275,24 +357,48 @@ def get_ollama_model(model="gemma3:12b"):
 
 if __name__ =="__main__":
 
-    # Example game state
-    example_observation = {
-        "stage": 3,
-        "timer": 45,
-        "wins": 1,
-        "health_1": 180,
-        "health_2": 100,
-        "character": "Jin",
-        "bar_status": 2
-    }
-
     model = get_ollama_model()
     print(f"Using model: {model}")
 
-    # Get action from LLM
-    move, attack, reasoning = get_llm_action(example_observation, model=model)
+    iterations = 200
+    response_times = []
+    
+    print(f"Running benchmark for {iterations} iterations...")
+    
+    for i in tqdm(range(iterations)):
+        # Get action from LLM
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": "Choose a random move and action!"}
+        ]
+        
+        # Time the request
+        start_time = time.time()
+        
+        # Send the request to Ollama
+        response = ollama.chat(
+            model=model,
+            messages=messages,
+        )
+        
+        # Calculate and store response time
+        elapsed_time = time.time() - start_time
+        response_times.append(elapsed_time)
 
-    print(f"Predicted Move: {move}")
-    print(f"Predicted Attack: {attack}")
-    print(f"Reasoning: {reasoning}")
+    # Calculate and print statistics
+    avg_time = statistics.mean(response_times)
+    median_time = statistics.median(response_times)
+    min_time = min(response_times)
+    max_time = max(response_times)
+    stdev_time = statistics.stdev(response_times) if len(response_times) > 1 else 0
+    
+    print("\nBenchmark Results:")
+    print(f"Total iterations: {iterations}")
+    print(f"Average response time: {avg_time:.4f} seconds")
+    print(f"Median response time: {median_time:.4f} seconds")
+    print(f"Minimum response time: {min_time:.4f} seconds")
+    print(f"Maximum response time: {max_time:.4f} seconds")
+    print(f"Standard deviation: {stdev_time:.4f} seconds")
+    print(f"Total time elapsed: {sum(response_times):.2f} seconds")
+    print(f"Requests per second: {iterations/sum(response_times):.2f}")
 

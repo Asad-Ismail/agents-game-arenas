@@ -33,7 +33,7 @@ def get_settings(game_id):
 
     # Episode settings
     settings.seed = None  # Random seed (None for automatic)
-    settings.difficulty = 3  # Game difficulty (1-9, None for random)
+    settings.difficulty = 6  # Game difficulty (1-9, None for random)
     settings.continue_game = 0.0  # Continue game logic
     settings.show_final = False  # Show game finale when completed
 

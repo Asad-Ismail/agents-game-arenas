@@ -11,10 +11,28 @@ from diambra.arena import make as diambra_make
 from utils import RGBToGrayscaleWrapper, env_wrapping,DummyVecEnv, Monitor
 
 
+def linear_schedule(initial_value, final_value=3e-6):
+    """
+    Linear learning rate schedule with specified initial and final values.
+    
+    Args:
+        initial_value: Starting learning rate.
+        final_value: Ending learning rate.
+        
+    Returns:
+        Schedule function that adjusts learning rate based on training progress.
+    """
+    def func(progress):
+        # If progress goes from 1 to 0 during training
+        return initial_value + (final_value - initial_value) * (1 - progress)
+    
+    return func
+
+
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--total_timesteps", type=int, default=500000, help="Total timesteps for training")
+    parser.add_argument("--total_timesteps", type=int, default=5000000, help="Total timesteps for training")
     parser.add_argument("--eval_episodes", type=int, default=3, help="Number of episodes for evaluation")
     parser.add_argument("--checkpoint_freq", type=int, default=10000, help="Frequency of checkpoints")
     parser.add_argument("--custom_wrapper", type=bool, default=False, help="True if you want train on gray scale and want rgb visualizations false if the model was trained on rgb")
@@ -64,12 +82,15 @@ def main():
         env, num_envs = make_sb3_env(GAME_ID, settings, wrappers_settings)
 
     #env, num_envs = make_sb3_env(GAME_ID, settings, wrappers_settings)
+    print(f"*"*100)
     print(f"Activated {num_envs} environment(s)")
+    print(f"*"*100)
 
     # Define policy kwargs - network architecture
     policy_kwargs = {
         "net_arch": [64, 64]  
     }
+
 
     # Initialize the agent or load a pre-trained one
     if args.load_model is None:
@@ -79,7 +100,7 @@ def main():
             env,
             verbose=1,
             tensorboard_log=log_dir,
-            learning_rate=3e-4,
+            learning_rate=linear_schedule(2.5e-4),
             gamma=0.95,
             policy_kwargs=policy_kwargs
         )
@@ -135,8 +156,8 @@ def main():
     env.seed(SEED)
     observation = env.reset()
 
-    cumulative_reward = 0
-    rl_controlled = {"P1": True, "P2": False}
+    cumulative_reward = [0.0 for _ in range(num_envs)]
+    #rl_controlled = {"P1": True, "P2": False}
     done = False
 
     # Run one episode
@@ -147,15 +168,20 @@ def main():
         # Step training environment and get next observation for model
         observation, reward, done, info = env.step(action)
         cumulative_reward += reward
+        if any(x != 0 for x in reward):
+            print("Cumulative reward(s) =", cumulative_reward)
 
+        if done.any():
+            observation = env.reset()
+            break
         
-        # Get RGB frame from visualization environment
-        rgb_frame = env.render(mode="rgb_array")
+        # Get RGB frame from visualization environment # TODO it will not work for multiple env change it to get one env
+        #rgb_frame = env.render(mode="rgb_array")
         #print(f"RGB frame shape: {rgb_frame.shape}")  # Should be (128, 128, 3)
-        vis_data = observation.copy()
-        vis_data['rgb_frame'] = rgb_frame 
+        #vis_data = observation.copy()
+        #vis_data['rgb_frame'] = rgb_frame 
         # Pass RGB observation to your rendering function
-        render_with_annotations(vis_data, rl_controlled)
+        #render_with_annotations(vis_data, rl_controlled)
     
     env.close()
     print(f"Done with cummulative reward {cumulative_reward }!")

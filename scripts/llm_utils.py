@@ -126,13 +126,30 @@ def decoder_observations(observation, include_image=False):
     image_data = None
     if include_image and 'rgb_frame' in observation:
         image_data = encode_image(observation['rgb_frame'])
-    
 
-    own_char_1 = decode_character(observation.get('own_character_1', np.zeros(39)))
-    own_char_2 = decode_character(observation.get('own_character_2', np.zeros(39)))
     
-    opp_char_1 = decode_character(observation.get('opp_character_1', np.zeros(39)))
-    opp_char_2 = decode_character(observation.get('opp_character_2', np.zeros(39)))
+    # Cache characters
+    decoded_characters = {}
+
+    def get_decoded_character(key):
+        """Helper function to get decoded character info with safer caching."""
+        if key not in observation:
+            return "Unknown"
+        char_array = observation.get(key, np.zeros(39))
+        if isinstance(char_array, np.ndarray) and char_array.size > 0:
+            char_index = np.argmax(char_array)
+            cache_key = f"{key}_{char_index}"
+            
+            if cache_key not in decoded_characters:
+                decoded_characters[cache_key] = decode_character(char_array)
+            return decoded_characters[cache_key]
+        return "Unknown"
+
+    own_char_1 = get_decoded_character('own_character_1')
+    own_char_2 = get_decoded_character('own_character_2')
+    
+    opp_char_1 = get_decoded_character('opp_character_1')
+    opp_char_2 = get_decoded_character('opp_character_2')
     
     own_health_1 = get_box_value(observation.get('own_health_1', np.array([0.0])))
     own_health_2 = get_box_value(observation.get('own_health_2', np.array([0.0])))
@@ -154,8 +171,8 @@ def decoder_observations(observation, include_image=False):
     opp_active = get_discrete_value(observation.get('opp_active_character', 0))
 
     # Get character name
-    own_char = decode_character(observation.get('own_character', np.zeros(39)))
-    opp_char = decode_character(observation.get('opp_character', np.zeros(39)))
+    own_char = get_decoded_character('own_character')
+    opp_char = get_decoded_character('opp_character')
     
     # Format positions as string
     own_position = "Left" if own_side == 0 else "Right"
@@ -289,6 +306,7 @@ def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0
     global system_prompt
     system_prompt = system_prompt.strip()
     user_prompt, image_data = decoder_observations(observation)
+    print(f"Usser prompt is {user_prompt}")
     
     try:
         options = {
@@ -317,7 +335,7 @@ def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0
         # Extract the content from the response
         if 'message' in response and 'content' in response['message']:
             action_text = response['message']['content']
-            #print(f"LLM response is {action_text}")
+            print(f"LLM response is {action_text}")
         else:
             print("Warning: Unexpected response format from Ollama")
             return random.choice(MOVES), random.choice(ATTACKS), "Random fallback (API error)"
@@ -338,6 +356,9 @@ def get_ollama_model(model="gemma3:12b"):
     # Define preferred models in order (best first)
     preferred_models = [
         "gemma3:12b",
+        "phi3:mini",
+        "qwen:0.5b",
+        "llama3.2:1b",
         "llava",  # Default LLaVA
         "llava:34b",  # Largest LLaVA model
         "bakllava:7b",  # BakLLaVA model
@@ -351,13 +372,13 @@ def get_ollama_model(model="gemma3:12b"):
     if model in preferred_models:
         return model
     else:
-        raise("Specified model is not available!")
+        raise ValueError("Specified model is not available!") 
 
 
 
 if __name__ =="__main__":
 
-    model = get_ollama_model()
+    model = get_ollama_model(model="llama3.2:1b")
     print(f"Using model: {model}")
 
     iterations = 200

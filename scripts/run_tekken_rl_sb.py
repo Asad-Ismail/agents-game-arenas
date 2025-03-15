@@ -82,7 +82,6 @@ def main():
         action, _state = model.predict(observation, deterministic=True)
         #print(action.squeeze(0))
         observation, reward, done, info = env.step(action)
-        decoder_observations(observation)
         cumulative_reward += reward
         #print(observation)
         # Get RGB frame and render

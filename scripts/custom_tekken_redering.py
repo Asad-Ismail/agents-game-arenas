@@ -45,7 +45,7 @@ def get_settings(game_id):
     return settings
 
 
-def render_with_annotations(observation, rl_controlled):
+def render_with_annotations(observation, players):
     """
     Render the game frame with RL indicators overlaid on characters
     
@@ -73,6 +73,7 @@ def render_with_annotations(observation, rl_controlled):
         else:
             p2_side = observation['P2']['side']
         
+        frame=cv2.resize(frame,(224,224))
         # Frame shape
         height, width = frame.shape[:2]     
         #print(f"Frame shape is {height}, {width}")
@@ -81,11 +82,10 @@ def render_with_annotations(observation, rl_controlled):
         p1_pos = (int(width * 0.25), int(height * 0.22)) if p1_side == 0 else (int(width * 0.75), int(height * 0.22))
         p2_pos = (int(width * 0.25), int(height * 0.22)) if p2_side == 0 else (int(width * 0.75), int(height * 0.22))
         
-        if rl_controlled["P1"]:
-            cv2.putText(frame, "RL", p1_pos, FONT, FONT_SCALE, FONT_COLOR, FONT_THICKNESS)
+
+        cv2.putText(frame, players[0], p1_pos, FONT, FONT_SCALE, FONT_COLOR, FONT_THICKNESS)
         
-        if rl_controlled["P2"]:
-            cv2.putText(frame, "RL", p2_pos, FONT, FONT_SCALE, FONT_COLOR, FONT_THICKNESS)
+        cv2.putText(frame, players[1], p2_pos, FONT, FONT_SCALE, FONT_COLOR, FONT_THICKNESS)
         
         # Display frame with overlays
         cv2.imshow(WINDOW_NAME, frame)

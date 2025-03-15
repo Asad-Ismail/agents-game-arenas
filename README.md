@@ -49,6 +49,9 @@ Optional: (fix the docker permission if permission error is thrown)
    ```bash
    sudo usermod -aG docker $USER
    newgrp docker
+
+   ## To run diambra docker and run just script for debugging
+   docker run -d --rm --name engine   -v $HOME/.diambra/credentials:/tmp/.diambra/credentials   -v /home/asad/dev/agents-game-arenas/roms/:/opt/diambraArena/roms   -p 127.0.0.1:50051:50051 docker.io/diambra/engine:latest
    ```
 
 ### Install Diambra CLI and Arena

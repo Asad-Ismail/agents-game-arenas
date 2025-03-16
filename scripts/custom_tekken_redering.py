@@ -7,10 +7,10 @@ import numpy as np
 from fight_stratigies import *
 
 
-FONT = cv2.FONT_HERSHEY_SIMPLEX
+FONT = cv2.FONT_HERSHEY_PLAIN #cv2.FONT_HERSHEY_COMPLEX_SMALL
 FONT_SCALE = 0.5
 FONT_COLOR = (0, 0, 255)
-FONT_THICKNESS = 2
+FONT_THICKNESS = 1
 WINDOW_NAME = "Tekken Tag"
 GAME_ID = "tektagt"
 
@@ -79,12 +79,10 @@ def render_with_annotations(observation, players):
         #print(f"Frame shape is {height}, {width}")
         
         # Calculate positions for "RL" text based on player sides, 0 left, 1 Right
-        p1_pos = (int(width * 0.25), int(height * 0.22)) if p1_side == 0 else (int(width * 0.75), int(height * 0.22))
-        p2_pos = (int(width * 0.25), int(height * 0.22)) if p2_side == 0 else (int(width * 0.75), int(height * 0.22))
+        p1_pos = (int(width * 0.22), int(height * 0.22)) if p1_side == 0 else (int(width * 0.75), int(height * 0.22))
+        p2_pos = (int(width * 0.22), int(height * 0.22)) if p2_side == 0 else (int(width * 0.75), int(height * 0.22))
         
-
         cv2.putText(frame, players[0], p1_pos, FONT, FONT_SCALE, FONT_COLOR, FONT_THICKNESS)
-        
         cv2.putText(frame, players[1], p2_pos, FONT, FONT_SCALE, FONT_COLOR, FONT_THICKNESS)
         
         # Display frame with overlays

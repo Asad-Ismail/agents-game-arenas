@@ -10,17 +10,17 @@ from diambra.arena import make as diambra_make
 from utils import RGBToGrayscaleWrapper, env_wrapping, DummyVecEnv, Monitor
 import numpy as np
 import queue
+import collections
 import threading
-from llm_utils import decoder_observations,get_llm_action,get_ollama_model, MOVES, ATTACKS
-
+from llm_utils import get_llm_action,get_ollama_model, MOVES, ATTACKS
 
 
 class ThreadedLLMAgent:
-    def __init__(self, model):
+    def __init__(self, model, num_moves=4):
         self.model = model
+        self.num_moves = num_moves
         self.request_queue = queue.Queue()
-        self.result_queue = queue.Queue()
-        self.current_result = ("No-Move", "No-Attack", "Initial state")
+        self.action_queue = collections.deque(maxlen=num_moves*2)  # Store sequence of actions
         self.running = False
         self.thread = None
         
@@ -52,11 +52,15 @@ class ThreadedLLMAgent:
                         self.request_queue.task_done()
                     
                     if latest_observation is not None:
-                        # Process the observation with LLM
-                        move, attack, reasoning = get_llm_action(latest_observation, model=self.model)
-                        
-                        # Put the result in the result queue
-                        self.result_queue.put((move, attack, reasoning))
+                        # Process the observation with LLM to get multiple actions
+                        actions = get_llm_action(latest_observation, model=self.model, num_moves=self.num_moves)
+                        #print(f"LLM actions are {actions}")
+                        # Only update the action queue if we got valid actions back
+                        if actions and len(actions) > 0:
+                            # Clear the previous action queue and add new actions
+                            #self.action_queue.clear()
+                            for action in actions:
+                                self.action_queue.append(action)
                         
                 except queue.Empty:
                     # No observations to process, sleep a bit
@@ -67,28 +71,26 @@ class ThreadedLLMAgent:
     
     def submit_observation(self, observation):
         """Submit a new observation to be processed asynchronously"""
-        try:
-            # Make a copy of the observation to avoid issues if it changes
-            obs_copy = observation.copy()
-            self.request_queue.put_nowait(obs_copy)
-        except queue.Full:
-            # Queue is full, just ignore this observation
-            pass
+        # Make a copy of the observation to avoid issues if it changes
+        obs_copy = observation.copy()
+        # Clear any pending observations - we only want the most recent
+        while not self.request_queue.empty():
+            try:
+                self.request_queue.get_nowait()
+                self.request_queue.task_done()
+            except queue.Empty:
+                break  
+        # Add the new observation to the queue
+        self.request_queue.put(obs_copy)
     
     def get_action(self):
-        """Get the most recent LLM action result"""
-        # Check if we have any new results
-        try:
-            while not self.result_queue.empty():
-                # Update with the newest result
-                self.current_result = self.result_queue.get_nowait()
-                self.result_queue.task_done()
-        except queue.Empty:
-            pass
-        
-        # Return the most recent result
-        return self.current_result
-
+        """Get the next action from the queue, or a default if empty"""
+        if not self.action_queue:
+            # Return default action if no actions are available
+            return ("No-Move", "No-Attack", "Waiting for LLM response")
+            
+        # Pop the next action from the left of the queue
+        return self.action_queue.popleft()
 
 
 def main():
@@ -140,7 +142,7 @@ def main():
     observation = env.reset()
 
     cumulative_reward = 0
-    model = get_ollama_model(model="phi3:mini")
+    model = get_ollama_model(model="qwen:0.5b")
     players = [f"{model}", "cpu"]
     done = False
 
@@ -149,21 +151,20 @@ def main():
     
     # Submit the initial observation
     llm_agent.submit_observation(observation)
-
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_GUI_NORMAL)  
     try:
         while not done:
             move, attack, reasoning = llm_agent.get_action()
+            #result= get_llm_action(observation=observation, model=model)
+            #if reasoning!="Waiting for LLM response":
+            #    print(move,attack,reasoning) 
             move_index = MOVES.index(move)
             attack_index = ATTACKS.index(attack)
             action = np.array([move_index, attack_index]).reshape(1, -1)
-            #print(f"Current Prediction - Move: {move}, Attack: {attack}")
-            #print(f"Reasoning: {reasoning}")
             #action = env.action_space.sample()
             #action=np.array(action).reshape(1,-1)
             observation, reward, done, info = env.step(action)
             llm_agent.submit_observation(observation)
-            #print(f"Obs is {observation}")
             cumulative_reward += reward
             rgb_frame = env.render(mode="rgb_array")
             vis_data = observation.copy()

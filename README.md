@@ -3,6 +3,45 @@
 This repository combines LLM and RL agents to play various games. 
 This repo is currently under development and will be updated as we add more features and games.
 
+
+### PPO(RL) Vs CPU
+
+PPO(RL) agent trained for 700,000 steps. Red labels on top shows which is which
+
+<p align="center">
+<video autoplay loop muted playsinline>
+  <source src="videos/ppo.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+
+### LLMs Vs CPU
+
+For LLMs we run llms both locally using OLLAMA or using cloud hosting
+
+Using Ollama we can easily switch open weight models to test them.
+
+llama3.2 1b Vs CPU 
+
+<p align="center">
+<video autoplay loop muted playsinline>
+  <source src="videos/llama3.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+
+
+Qwen0.5b model vs CPU
+
+<p align="center">
+<video autoplay loop muted playsinline>
+  <source src="videos/qwen.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+</p>
+
+
+
 ## Diambra Engine Setup
 
 We will initially focus on using the [Diambra Engine](https://docs.diambra.ai). While these instructions are for Ubuntu, you can find setup guides for all major operating systems in the [official documentation](https://docs.diambra.ai).

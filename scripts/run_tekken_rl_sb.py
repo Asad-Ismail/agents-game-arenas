@@ -14,7 +14,7 @@ import numpy as np
 def main():
     # Parse arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_path", type=str, default="/home/asad/dev/agents-game-arenas/scripts/results/tektagt/model/tekken_ppo_50000_steps", help="Path to the trained model")
+    parser.add_argument("--model_path", type=str, default="/home/asad/dev/agents-game-arenas/scripts/results/tektagt/model/tekken_ppo_700000_steps", help="Path to the trained model")
     parser.add_argument("--custom_wrapper", type=bool, default=False, help="True if model was trained on grayscale")
     args = parser.parse_args()
 
@@ -73,7 +73,7 @@ def main():
     observation = env.reset()
 
     cumulative_reward = 0
-    players = {"RL", "cpu"}
+    players = ["PPO", "cpu"]
     done = False
 
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_GUI_NORMAL)  

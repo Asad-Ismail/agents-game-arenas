@@ -25,10 +25,16 @@ CHARACTERS = ["Xiaoyu", "Yoshimitsu", "Nina", "Law", "Hwoarang", "Eddy", "Paul",
               "Tiger", "Angel", "Alex", "Mokujin", "Unknown"]
 
 
+num_moves= 3
 
-system_prompt = f"""# Tekken Tag Tournament - You are an expert Tekken Tag Tournament player. Your job is to analyze the current game state and choose the optimal move and attack to win
-each round. Pay close attention to yours and opponent position which are either Left or Right. If you are Left going Left will block and moving right
-will go to opponenet and vice versa. 
+system_prompt = f"""# Tekken Tag Tournament - AI Agent
+
+You are an expert Tekken Tag Tournament player. Your job is to analyze the current game state and choose the optimal moves and attacks to win each round.
+
+## CORE MECHANICS:
+- Position matters: If you are on the Left side, moving Left blocks and Right approaches (and vice versa)
+- Health management: Tag out when low on health to allow recovery
+- Aggression: Generally play aggressively to maintain pressure
 
 ## AVAILABLE MOVES:
 {', '.join(MOVES)}
@@ -36,119 +42,85 @@ will go to opponenet and vice versa.
 ## AVAILABLE ATTACKS:
 {', '.join(ATTACKS)}
 
-## OBSERVATION SPACE DETAILS:
-- timer: Time remaining in match (range: 0.0-1.0), where 0.0 means time's up and 1.0 is maximum time
-- stage: Current stage ID (range: 0.0-1.0), 0.0 means first and 1.0 means last stage
+## GAME STATE INFORMATION:
+- timer: Time remaining (0.0-1.0)
+- own_side/opp_side: Position (0: left side, 1: right side)
+- own_wins/opp_wins: Rounds won (0.0-1.0)
+- own_active_character/opp_active_character: Currently fighting (0: first character, 1: second character)
+- own_health_1/opp_health_1: Health of first character (0.0-1.0)
+- own_health_2/opp_health_2: Health of second character (0.0-1.0)
+- own_character/opp_character: Name of currently active character
 
-## PLAYER INFORMATION:
-- own_wins/opp_wins: Number of rounds won (range: 0.0-1.0), where 0.0 means no wins and 1.0 is maximum 
-- own_side/opp_side: Position on stage (0: left side, 1: right side)
-- own_active_character/opp_active_character: Which character is currently fighting (0: first character, 1: second character)
-
-## CHARACTER DETAILS:
-- own_character_1/opp_character_1: First character in the tag team
-- own_character_2/opp_character_2: Second character in the tag team
-- own_character/opp_character: Currently active character Name
-
-## HEALTH SYSTEM:
-- own_health_1/opp_health_1: Health of first character (range: 0.0-1.0), where 0.0 means defeated and 1.0 is full health
-- own_health_2/opp_health_2: Health of second character (range: 0.0-1.0), where 0.0 means defeated and 1.0 is full health
-
-## BAR STATUS MEANING:
-Bar status describes the condition of the reserve (tag) character:
-- 0: Reserve health bar almost filled, character in good condition
-- 1: Small amount of health lost, recharging in progress
-- 2: Large amount of health lost, recharging in progress
-- 3: Rage mode on, combo attack ready (special attacks available)
-- 4: No background character (final boss battle or character defeated)
-
-## STRATEGY GUIDELINES:
-- Use Tag when your active character is low on health
-- Consider position advantage when choosing moves
-- Use combo attacks when opponent is vulnerable
-- Defensive moves are better when your health is very low
-- Tag strategically to maximize health recovery of reserve character
-- Different characters have different strengths (speed, power, range)
-- In general play very aggresively!
+## BAR STATUS:
+- 0: Reserve health bar almost filled
+- 1: Small health loss, recharging
+- 2: Large health loss, recharging
+- 3: Rage mode on, combo attack ready
+- 4: No reserve character
 
 ## POSITION-BASED STRATEGY:
-If you are on the Left side:
-- Moving Left will block/defend
-- Moving Right will approach opponent
-- Down+Left can dodge certain attacks
+Left side:
+- Left → Block/defend
+- Right → Approach opponent
+- Down+Left → Dodge certain attacks
 
-If you are on the Right side:
-- Moving Right will block/defend
-- Moving Left will approach opponent
-- Down+Right can dodge certain attacks
+Right side:
+- Right → Block/defend
+- Left → Approach opponent
+- Down+Right → Dodge certain attacks
 
-## Example Responses
+## TACTICAL GUIDELINES:
+- Tag when active character health is low
+- Use combos when opponent is vulnerable
+- Block when very low on health
+- Use powerful attacks in rage mode
+- Switch characters strategically for health recovery
 
-Example if opponent is close and you are on Left:
-- Move: "Right"
-- Attack: "Left Punch+Right Punch"
-- Reasoning: "Close range combo when approaching"
+## RESPONSE INSTRUCTIONS:
+Plan the next {num_moves} moves as a sequence. Return EXACTLY {num_moves} JSON objects in a single code block.
+IMPORTANT: You MUST choose moves ONLY from the AVAILABLE MOVES list and attacks ONLY from the AVAILABLE ATTACKS list. Do not combine or create new moves or attacks.
 
-Example if opponent is close and you are on Right:
-- Move: "Left"
-- Attack: "Right Kick"
-- Reasoning: "Fast strike to create space"
-
-Example if opponent is far and you are on Left:
-- Move: "Right"
-- Attack: "No-Attack"
-- Reasoning: "Closing distance first"
-
-Example if opponent is far and you are on Right:
-- Move: "Left+Up"
-- Attack: "No-Attack"
-- Reasoning: "Jump approach to avoid projectiles"
-
-## DEFENSIVE EXAMPLES:
-Example when low on health and you are on Left:
-- Move: "Left"
-- Attack: "No-Attack"
-- Reasoning: "Blocking to avoid damage"
-
-Example when low on health and you are on Right:
-- Move: "Right"
-- Attack: "Tag"
-- Reasoning: "Switch to character with more health"
-
-## OFFENSIVE EXAMPLES:
-Example when opponent is stunned and you are on Left:
-- Move: "Right"
-- Attack: "Left Punch+Left Kick"
-- Reasoning: "Combo attack on vulnerable opponent"
-
-Example when opponent is stunned and you are on Right:
-- Move: "Left"
-- Attack: "Right Punch+Right Kick"
-- Reasoning: "Maximum damage opportunity"
-
-
-## INSTRUCTIONS:
-1. Analyze the game state information
-2. Consider character positions, health, and match situation
-3. Choose exactly ONE move and ONE attack based on the current state
-4. Return your decision in the required JSON format
-
-## RESPONSE FORMAT:
-Respond ONLY with a valid JSON object with this exact structure:
+Use this format:
 
 ```json
 {{
-  "move": "MOVE_NAME",
-  "attack": "ATTACK_NAME",
-  "reasoning": "Brief explanation of your decision"
+  "move": "MOVE_FROM_LIST",
+  "attack": "ATTACK_FROM_LIST",
+  "reasoning": "Brief tactical explanation (20 words max)"
+}}
+{{
+  "move": "MOVE_FROM_LIST",
+  "attack": "ATTACK_FROM_LIST",
+  "reasoning": "Brief tactical explanation (20 words max)"
+}}
+...
+```
+
+IMPORTANT: Place all {num_moves} JSON objects within a single ```json code block, one after another (not as an array). Each object should be a complete, valid JSON object.
+
+Example for a 3-move plan:
+
+```json
+{{
+  "move": "Right",
+  "attack": "Left Punch",
+  "reasoning": "Approach and strike"
+}}
+{{
+  "move": "Left",
+  "attack": "Right Kick",
+  "reasoning": "Create space with counter"
+}}
+{{
+  "move": "Right+Down",
+  "attack": "Left Punch+Right Punch",
+  "reasoning": "Approach with combo attack"
 }}
 ```
 
-Where MOVE_NAME is one of the available moves and ATTACK_NAME is one of the available attacks.
-The reasoning should be short (max 20 words).
+RESPOND ONLY WITH THE JSON CODE BLOCK AND NOTHING ELSE.
+
 """
-
-
 
 def decode_character(one_hot_vector):
     if isinstance(one_hot_vector, np.ndarray) and len(one_hot_vector) <= len(CHARACTERS):
@@ -177,6 +149,17 @@ def get_bar_status_explanation(bar_status_array):
     bar_status_array = bar_status_array.squeeze(0)
     bar_idx = np.argmax(bar_status_array)
     return bar_idx
+
+
+def get_bar_status_meaning(status_index):
+    meanings = [
+        "(Reserve almost full health)",
+        "(Small health loss, recharging)",
+        "(Large health loss, recharging)",
+        "(Rage mode, special attacks available)",
+        "(No reserve character)"
+    ]
+    return meanings[status_index] if 0 <= status_index < len(meanings) else ""
 
 def decoder_observations(observation, include_image=False):
 
@@ -250,26 +233,23 @@ def decoder_observations(observation, include_image=False):
     opp_bar_status_exp = get_bar_status_explanation(observation.get('opp_bar_status', np.zeros(5)))
 
     user_prompt = f"""## CURRENT GAME STATE:
-    - Stage: {stage:.2f} (normalized)
-    - Time Left: {timer:.2f} (normalized)
-    - Your Wins: {own_wins:.2f} (normalized)
-    - Opponent Wins: {opp_wins:.2f} (normalized)
-    - Your Characters: {own_char_1} and {own_char_2}
-    - Your Active Character: {own_active_char}
-    - Your Active Character Name: {own_char}
-    - Your Health (Active): {own_health_1_pct} (normalized)
-    - Your Health (Reserve): {own_health_2_pct} (normalized)
-    - Your Bar Status: {own_bar_status_exp}
-    - Opponent Characters: {opp_char_1} and {opp_char_2}
-    - Opponent Active Character: {opp_active_char}
-    - Opponent Active Character Name: {opp_char}
-    - Opponent Health (Active): {opp_health_1_pct} (normalized)
-    - Opponent Health (Reserve): {opp_health_2_pct} (normalized)
-    - Opponent Bar Status: {opp_bar_status_exp}
-    - Your Position: {own_position}
-    - Opponent Position: {opp_position}
+    - Time Left: {timer:.2f} (0.0=time's up, 1.0=max time)
+    - Your Position: {own_position} side
+    - Opponent Position: {opp_position} side
+    - Match Score: You {own_wins:.2f} vs Opponent {opp_wins:.2f}
 
-    Based on this game state and the image, what is your next move and attack?"""
+    ## YOUR TEAM:
+    - Active: {own_char} ({own_health_1_pct} health)
+    - Reserve: {own_char_2 if own_active == 0 else own_char_1} ({own_health_2_pct} health)
+    - Bar Status: {own_bar_status_exp}
+
+    ## OPPONENT TEAM:
+    - Active: {opp_char} ({opp_health_1_pct} health)
+    - Reserve: {opp_char_2 if opp_active == 0 else opp_char_1} ({opp_health_2_pct} health)
+    - Bar Status: {opp_bar_status_exp} 
+
+    Analyze this game state and provide your next {num_moves} moves in the required JSON format.
+    """
 
     return user_prompt, image_data
 
@@ -299,78 +279,80 @@ def find_closest_match(text, options):
     # If no match, return random choice
     return random.choice(options)
 
-def parse_llm_response(response_text):
+def parse_llm_response(response_text, num_moves=3):
     """
     Parse the VLM response to extract move, attack and reasoning.
-    Handles different response formats with robust fallbacks.
+    Simplified approach that handles the JSON code block as a whole.
     """
-    # First try: Look for a JSON block with regex
+    move_sequence = []
+    
+    # Extract the content between ```json and ``` markers
     json_match = re.search(r'```json\s*(.*?)\s*```', response_text, re.DOTALL)
-    if not json_match:
-        # Second try: Look for any JSON-like structure
-        json_match = re.search(r'{.*}', response_text, re.DOTALL)
     
     if json_match:
-        try:
-            # Parse the JSON block
-            json_str = json_match.group(1) if '```json' in response_text else json_match.group(0)
-            action_data = json.loads(json_str)
-            
-            # Extract move and attack, with validation
-            move = action_data.get('move', '')
-            attack = action_data.get('attack', '')
-            reasoning = action_data.get('reasoning', 'No reasoning provided')
-            
-            # Validate move
-            if move not in MOVES:
-                closest_move = find_closest_match(move, MOVES)
-                print(f"Invalid move '{move}', using closest match: '{closest_move}'")
-                move = closest_move
-                
-            # Validate attack
-            if attack not in ATTACKS:
-                closest_attack = find_closest_match(attack, ATTACKS)
-                print(f"Invalid attack '{attack}', using closest match: '{closest_attack}'")
-                attack = closest_attack
-                
-            return move, attack, reasoning
-            
-        except json.JSONDecodeError:
-            print(f"Failed to parse JSON from response: {json_match.group(0)}")
-    
-    # Fallback parsing for non-JSON responses
-    print("Falling back to text parsing for response")
-    lines = response_text.split("\n")
-    
-    # Look for move and attack in response lines
-    move = next((m for m in MOVES if any(m.lower() in line.lower() for line in lines)), None)
-    attack = next((a for a in ATTACKS if any(a.lower() in line.lower() for line in lines)), None)
-    
-    # If still not found, use random selections
-    if not move:
-        move = random.choice(MOVES)
-    if not attack:
-        attack = random.choice(ATTACKS)
+        json_content = json_match.group(1)
         
-    return move, attack, "Extracted from text response"
+        # Wrap the content in array brackets to make it valid JSON
+        json_array = f"[{json_content}]"
+        
+        # Remove any commas between JSON objects if they exist
+        json_array = re.sub(r'}\s*,?\s*{', "},{", json_array)
+        
+        try:
+            # Parse as a JSON array
+            actions = json.loads(json_array)
+            
+            for action_data in actions:
+                # Extract move and attack, with validation
+                move = action_data.get('move', '')
+                attack = action_data.get('attack', '')
+                reasoning = action_data.get('reasoning', f'Move {len(move_sequence)+1} in sequence')
+                
+                # Validate move
+                if move not in MOVES:
+                    closest_move = find_closest_match(move, MOVES)
+                    print(f"Invalid move '{move}', using closest match: '{closest_move}'")
+                    move = closest_move
+                    reasoning = "Using fallback move"
+                    
+                # Validate attack
+                if attack not in ATTACKS:
+                    closest_attack = find_closest_match(attack, ATTACKS)
+                    print(f"Invalid attack '{attack}', using closest match: '{closest_attack}'")
+                    attack = closest_attack
+                    reasoning = "Using fallback attack"
+                    
+                move_sequence.append((move, attack, reasoning))
+                
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON array: {str(e)}")
+            print(f"Content attempted to parse: {json_array}...")
+    
+    # Fill with fallback moves if needed
+    if len(move_sequence) < num_moves:
+        fallback_moves = [
+            (random.choice(MOVES), random.choice(ATTACKS), "Fallback move") 
+            for _ in range(num_moves - len(move_sequence))
+        ]
+        move_sequence.extend(fallback_moves)
+    
+    return move_sequence
 
 
-def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0):
+def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0, num_moves=1):
     """
-    Query a VLM via Ollama to get the next move and attack.
-    Returns a tuple of (move, attack, reasoning).
+    Query a VLM via Ollama to get the next moves and attacks.
+    Returns a list of tuples (move, attack, reasoning) for each action.
     Uses separate system and user prompts for efficiency.
     """
     global system_prompt
     system_prompt = system_prompt.strip()
     user_prompt, image_data = decoder_observations(observation)
-    #print(f"Usser prompt is {user_prompt}")
     
     try:
         options = {
             "temperature": temperature,  # Lower temperature for more consistent output
-            "num_predict": 150,  # Enough tokens for JSON output
-            #"stop": ["```"],  # Stop at the end of the JSON block
+            "num_predict": 400,  # Enough tokens for JSON output
         }
         
         # Prepare messages with system and user roles
@@ -393,16 +375,18 @@ def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0
         # Extract the content from the response
         if 'message' in response and 'content' in response['message']:
             action_text = response['message']['content']
-            #print(f"LLM response is {action_text}")
         else:
             print("Warning: Unexpected response format from Ollama")
-            return random.choice(MOVES), random.choice(ATTACKS), "Random fallback (API error)"
+            return [(random.choice(MOVES), random.choice(ATTACKS), "Random fallback (API error)") for _ in range(num_moves)]
         
-        return parse_llm_response(action_text)
+        # Parse the response to get multiple actions
+        actions = parse_llm_response(action_text)
+        return actions
         
     except Exception as e:
-        print(f"Error querying VLM: {str(e)}")
-        return random.choice(MOVES), random.choice(ATTACKS), f"Random fallback (Exception: {type(e).__name__})"
+        print(f"Error querying LLM: {str(e)}")
+        return [(random.choice(MOVES), random.choice(ATTACKS), f"Random fallback (Exception: {type(e).__name__})") 
+                for _ in range(num_moves)]
 
 
 def get_ollama_model(model="gemma3:12b"):

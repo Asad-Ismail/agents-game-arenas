@@ -140,7 +140,7 @@ def main():
     observation = env.reset()
 
     cumulative_reward = 0
-    model = get_ollama_model(model="llama3.2:1b")
+    model = get_ollama_model(model="phi3:mini")
     players = [f"{model}", "cpu"]
     done = False
 
@@ -157,9 +157,7 @@ def main():
             move_index = MOVES.index(move)
             attack_index = ATTACKS.index(attack)
             action = np.array([move_index, attack_index]).reshape(1, -1)
-            #move, attack, reasoning = get_llm_action(observation,model=model)
-            # Print the current prediction (optional)
-            print(f"Current Prediction - Move: {move}, Attack: {attack}")
+            #print(f"Current Prediction - Move: {move}, Attack: {attack}")
             #print(f"Reasoning: {reasoning}")
             #action = env.action_space.sample()
             #action=np.array(action).reshape(1,-1)
@@ -167,8 +165,6 @@ def main():
             llm_agent.submit_observation(observation)
             #print(f"Obs is {observation}")
             cumulative_reward += reward
-            #print(observation)
-            # Get RGB frame and render
             rgb_frame = env.render(mode="rgb_array")
             vis_data = observation.copy()
             vis_data['rgb_frame'] = rgb_frame

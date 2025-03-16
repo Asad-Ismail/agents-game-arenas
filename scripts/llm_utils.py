@@ -26,9 +26,9 @@ CHARACTERS = ["Xiaoyu", "Yoshimitsu", "Nina", "Law", "Hwoarang", "Eddy", "Paul",
 
 
 
-system_prompt = f"""# Tekken Tag Tournament - AI Player
-You are an expert Tekken Tag Tournament player. Your job is to analyze the game state and choose the optimal move and attack to win
-each round.
+system_prompt = f"""# Tekken Tag Tournament - You are an expert Tekken Tag Tournament player. Your job is to analyze the current game state and choose the optimal move and attack to win
+each round. Pay close attention to yours and opponent position which are either Left or Right. If you are Left going Left will block and moving right
+will go to opponenet and vice versa. 
 
 ## AVAILABLE MOVES:
 {', '.join(MOVES)}
@@ -38,10 +38,10 @@ each round.
 
 ## OBSERVATION SPACE DETAILS:
 - timer: Time remaining in match (range: 0.0-1.0), where 0.0 means time's up and 1.0 is maximum time
-- stage: Current stage ID (range: 0.0-1.0), where different values represent different arenas
+- stage: Current stage ID (range: 0.0-1.0), 0.0 means first and 1.0 means last stage
 
 ## PLAYER INFORMATION:
-- own_wins/opp_wins: Number of rounds won (range: 0.0-1.0), where 0.0 means no wins and 1.0 is maximum (typically 2 wins)
+- own_wins/opp_wins: Number of rounds won (range: 0.0-1.0), where 0.0 means no wins and 1.0 is maximum 
 - own_side/opp_side: Position on stage (0: left side, 1: right side)
 - own_active_character/opp_active_character: Which character is currently fighting (0: first character, 1: second character)
 
@@ -66,14 +66,72 @@ Bar status describes the condition of the reserve (tag) character:
 - Use Tag when your active character is low on health
 - Consider position advantage when choosing moves
 - Use combo attacks when opponent is vulnerable
-- Defensive moves are better when your health is low
+- Defensive moves are better when your health is very low
 - Tag strategically to maximize health recovery of reserve character
 - Different characters have different strengths (speed, power, range)
+- In general play very aggresively!
+
+## POSITION-BASED STRATEGY:
+If you are on the Left side:
+- Moving Left will block/defend
+- Moving Right will approach opponent
+- Down+Left can dodge certain attacks
+
+If you are on the Right side:
+- Moving Right will block/defend
+- Moving Left will approach opponent
+- Down+Right can dodge certain attacks
+
+## Example Responses
+
+Example if opponent is close and you are on Left:
+- Move: "Right"
+- Attack: "Left Punch+Right Punch"
+- Reasoning: "Close range combo when approaching"
+
+Example if opponent is close and you are on Right:
+- Move: "Left"
+- Attack: "Right Kick"
+- Reasoning: "Fast strike to create space"
+
+Example if opponent is far and you are on Left:
+- Move: "Right"
+- Attack: "No-Attack"
+- Reasoning: "Closing distance first"
+
+Example if opponent is far and you are on Right:
+- Move: "Left+Up"
+- Attack: "No-Attack"
+- Reasoning: "Jump approach to avoid projectiles"
+
+## DEFENSIVE EXAMPLES:
+Example when low on health and you are on Left:
+- Move: "Left"
+- Attack: "No-Attack"
+- Reasoning: "Blocking to avoid damage"
+
+Example when low on health and you are on Right:
+- Move: "Right"
+- Attack: "Tag"
+- Reasoning: "Switch to character with more health"
+
+## OFFENSIVE EXAMPLES:
+Example when opponent is stunned and you are on Left:
+- Move: "Right"
+- Attack: "Left Punch+Left Kick"
+- Reasoning: "Combo attack on vulnerable opponent"
+
+Example when opponent is stunned and you are on Right:
+- Move: "Left"
+- Attack: "Right Punch+Right Kick"
+- Reasoning: "Maximum damage opportunity"
+
 
 ## INSTRUCTIONS:
 1. Analyze the game state information
 2. Consider character positions, health, and match situation
-3. Choose the optimal move and attack combination based on the current state
+3. Choose exactly ONE move and ONE attack based on the current state
+4. Return your decision in the required JSON format
 
 ## RESPONSE FORMAT:
 Respond ONLY with a valid JSON object with this exact structure:
@@ -306,7 +364,7 @@ def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0
     global system_prompt
     system_prompt = system_prompt.strip()
     user_prompt, image_data = decoder_observations(observation)
-    print(f"Usser prompt is {user_prompt}")
+    #print(f"Usser prompt is {user_prompt}")
     
     try:
         options = {
@@ -335,7 +393,7 @@ def get_llm_action(observation, model="gemma3:12b", temperature=0.2, timeout=3.0
         # Extract the content from the response
         if 'message' in response and 'content' in response['message']:
             action_text = response['message']['content']
-            print(f"LLM response is {action_text}")
+            #print(f"LLM response is {action_text}")
         else:
             print("Warning: Unexpected response format from Ollama")
             return random.choice(MOVES), random.choice(ATTACKS), "Random fallback (API error)"

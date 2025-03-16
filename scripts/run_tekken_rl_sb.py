@@ -73,7 +73,7 @@ def main():
     observation = env.reset()
 
     cumulative_reward = 0
-    rl_controlled = {"P1": True, "P2": False}
+    players = {"RL", "cpu"}
     done = False
 
     cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_GUI_NORMAL)  
@@ -88,7 +88,7 @@ def main():
         rgb_frame = env.render(mode="rgb_array")
         vis_data = observation.copy()
         vis_data['rgb_frame'] = rgb_frame
-        render_with_annotations(vis_data, rl_controlled)
+        render_with_annotations(vis_data, players)
     
     env.close()
     print(f"Done with cumulative reward {cumulative_reward}!")

@@ -4,6 +4,8 @@ This repository shows playing video games using both Reinforcement Learning (RL)
 
 ### PPO (Reinforcement Learning) vs CPU
 
+Better quality videos can be viewed in videos subdir
+
 Lets see some fights of these agents
 
 <div align="center">

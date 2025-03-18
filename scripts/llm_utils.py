@@ -146,7 +146,8 @@ def get_discrete_value(discrete_value):
 # User prompt with the current game state information
 # Get bar status explanation
 def get_bar_status_explanation(bar_status_array):
-    bar_status_array = bar_status_array.squeeze(0)
+    if len(bar_status_array.shape)==2:
+        bar_status_array = bar_status_array.squeeze(0)
     bar_idx = np.argmax(bar_status_array)
     return bar_idx
 
@@ -162,7 +163,6 @@ def get_bar_status_meaning(status_index):
     return meanings[status_index] if 0 <= status_index < len(meanings) else ""
 
 def decoder_observations(observation, include_image=False):
-
     # Extract frame if available and include_image is True
     image_data = None
     if include_image and 'rgb_frame' in observation:
@@ -250,7 +250,7 @@ def decoder_observations(observation, include_image=False):
 
     Analyze this game state and provide your next {num_moves} moves in the required JSON format.
     """
-
+    #print(f"User prompt is {user_prompt}")
     return user_prompt, image_data
 
 
